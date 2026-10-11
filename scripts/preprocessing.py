@@ -70,10 +70,9 @@ def verify_no_missing(df: pd.DataFrame) -> bool:
     return True
 
 
-def melt_prices(prices: pd.DataFrame) -> pd.DataFrame:
+def melt_prices(prices: pd.DataFrame, price_cols: list) -> pd.DataFrame:
     """Convert wide format prices to long format with multi-index (date, ticker)."""
     date_col = 'date'
-    price_cols = [c for c in prices.columns if c != date_col]
 
     melted = prices.melt(id_vars=[date_col], value_vars=price_cols,
                          var_name='ticker', value_name='Price')
@@ -121,9 +120,8 @@ def preprocess_prices(prices: pd.DataFrame) -> pd.DataFrame:
 
     prices = resample_monthly_last(prices, 'date')
     prices = filter_price_outliers(prices, price_cols)
-    prices = compute_returns(prices, price_cols)
 
-    melted = melt_prices(prices)
+    melted = melt_prices(prices, price_cols)
     melted = compute_returns_long(melted)
     melted = filter_return_outliers_long(melted)
     melted = forward_fill_per_company_long(melted, ['monthly_past_return', 'monthly_future_return'])
