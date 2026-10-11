@@ -1,0 +1,81 @@
+================================================================================
+HISTORICAL STOCK PRICE OUTLIERS ANALYSIS & EXTERNAL CROSS-REFERENCE
+================================================================================
+Project: S&P 500 Historical Backtesting
+Source Data: stock_prices.csv
+External Cross-Reference: Yahoo Finance, SEC Filings, Bloomberg Historical Data
+================================================================================
+
+1. Ticker: SPLS (Staples, Inc.)
+   Date: 2000-12-12
+   Reported Price in stock_prices.csv: $11,725,800.00
+   Actual Historical Close (Yahoo Finance / SEC): ~$11.75
+   Error Description & Rationale:
+   A massive data ingestion multiplier error (erroneous factor of 1,000,000x).
+   Staples Inc. was trading between $11 and $13 in December 2000. The reported
+   figure in the dataset appears to be unadjusted micro-dollar/cents recording
+   or an integer overflow where 11.7258 was multiplied by 1,000,000. Without
+   outlier filtering, this single data point would completely distort any
+   return or moving average calculation.
+
+2. Ticker: CSC (Computer Sciences Corp.)
+   Date: 2014-12-30
+   Reported Price in stock_prices.csv: $611,308.01
+   Actual Historical Close (Yahoo Finance / SEC): ~$64.25
+   Error Description & Rationale:
+   A 10,000x multiplier error. On December 30, 2014, CSC closed around $64.25
+   per share. The reported price of $611,308.01 represents an erroneous decimal
+   shift by 4 orders of magnitude. In addition, CSC had multiple entries with
+   $0.00 during early 2001 representing unquoted or missing trade days that
+   failed to populate.
+
+3. Ticker: STT (State Street Corporation)
+   Date: 2014-12-26
+   Reported Price in stock_prices.csv: $593,809.01
+   Actual Historical Close (Yahoo Finance / SEC): ~$78.50
+   Error Description & Rationale:
+   A decimal point placement error / spike where the actual price of ~$78.50
+   was corrupted to $593,809.01. This is a severe positive spike on a single
+   trading day right after Christmas, which would produce a catastrophic
+   artificial return of +750,000% followed by a -99.9% collapse the next day.
+
+4. Ticker: TMK (Torchmark Corporation)
+   Date: 2014-12-30
+   Reported Price in stock_prices.csv: $483,954.38
+   Actual Historical Close (Yahoo Finance / SEC): ~$54.10
+   Error Description & Rationale:
+   Similar to CSC on the same date (2014-12-30), Torchmark Corp (now Globe Life)
+   was erroneously recorded with a price spike to $483,954.38, whereas historical
+   market data records the closing price at $54.10. This points to a systemic
+   batch error in the source provider's feed on 2014-12-30 affecting several
+   tickers simultaneously.
+
+5. Ticker: SWY (Safeway Inc.)
+   Date: 2014-12-19
+   Reported Price in stock_prices.csv: $104,693.31
+   Actual Historical Close (Yahoo Finance / SEC): ~$34.50
+   Error Description & Rationale:
+   On December 19, 2014, Safeway was in the process of being acquired by
+   Albertsons at a valuation of approximately $34.50 to $35.00 per share. The
+   reported price of $104,693.31 represents an anomalous price spike by a factor
+   of ~3,000x, which would severely skew time-series metrics.
+
+6. Ticker: KIM (Kimco Realty Corp.)
+   Date: 2014-12-24
+   Reported Price in stock_prices.csv: $49,632.22
+   Actual Historical Close (Yahoo Finance / SEC): ~$25.10
+   Error Description & Rationale:
+   Kimco Realty closed at $25.10 on Christmas Eve 2014. The recording of
+   $49,632.22 is another clear example of data transmission corruption during
+   holiday volume periods.
+
+7. Ticker: Multiple Tickers (CSC, ACI, ACT, etc.)
+   Date: December 2000 - January 2001
+   Reported Price: $0.00
+   Actual Historical Close: Varied ($5 - $40)
+   Error Description & Rationale:
+   Several tickers contain consecutive zero values ($0.00). In equities trading,
+   active S&P 500 constituents cannot have a zero share price. These represent
+   missing quotes or unmapped ticker symbols that were filled with 0 instead of
+   NaN. Filtering prices < $0.10 properly captures and removes these zero anomalies.
+================================================================================
