@@ -36,149 +36,105 @@ project/
 
 ---
 
-## Task Assignment
+## Difficulty Assessment (for fair split)
 
-### 🟦 Amon Ochuka (#aochuka) - Data Engineering & Pipeline Integration
-
-#### 1. **memory_reducer.py** (Part 1 - Preliminary)
-- [ ] Create `memory_reducer.py` with function `memory_reducer(paths)` that:
-  - Takes CSV file paths as input
-  - Optimizes dtypes to reduce memory usage
-  - Returns memory-optimized DataFrames for both prices and sp500
-  - Float columns → `np.float32` (minimum, preserve precision)
-  - Integer columns → smallest fitting dtype (int8, int16, int32, int64)
-  - Optimized prices dataset < 8MB
-  - Optimized sp500 dataset < 0.15MB
-- [ ] Implementation steps:
-  - Iterate over every column
-  - Determine if numeric
-  - Determine if integer-representable
-  - Find min/max values
-  - Apply smallest fitting dtype
-
-#### 2. **preprocessing.py** (Part 2 - Data Preprocessing Logic)
-- [ ] Create `preprocessing.py` with function `preprocessing(prices, sp500)` that:
-  - **Prices DataFrame:**
-    - Resample to monthly frequency, keep last value (month-end)
-    - Sort by date
-    - Filter price outliers: remove prices outside $0.1 to $10,000
-    - Compute monthly returns:
-      - Historical: `(price_t - price_t-1) / price_t-1`
-      - Future: `(price_t+1 - price_t) / price_t`
-    - Replace return outliers with NaN:
-      - Returns > 1 or < -0.5 → NaN
-      - **Exception:** Do NOT filter years 2008 and 2009 (financial crisis)
-      - Outlier detection per company (groupby ticker)
-    - Forward fill missing values within each company independently
-    - Drop remaining NaN values
-    - Verify zero missing values
-    - Final columns: `Price`, `monthly_past_return`, `monthly_future_return`
-  - **SP500 DataFrame:**
-    - Resample to monthly frequency, keep last value
-    - Compute historical monthly returns on adjusted close
-- [ ] Helper functions for each sub-step (modular design)
-
-#### 3. **main.py** (Part 5 - Main Pipeline)
-- [ ] Create `main.py` that executes full pipeline:
-```python
-# import data
-prices, sp500 = memory_reducer(paths)
-
-# preprocessing
-prices, sp500 = preprocessing(prices, sp500)
-
-# create signal
-prices = create_signal(prices)
-
-# backtest
-backtest(prices, sp500)
-```
-- [ ] Define `paths` to data files
-- [ ] Import functions from other modules
-- [ ] Run without errors from empty environment
-- [ ] Save all results to `results/` folder
-
-#### 4. **requirements.txt**
-- [ ] List all dependencies with versions:
-  - pandas
-  - numpy
-  - matplotlib
-  - jupyter (for notebook)
-  - Any others used
-
-#### 5. **Data Folder Setup**
-- [ ] Download/place `sp500.csv` and `stock_prices.csv` in `data/`
-- [ ] Verify data loads correctly
+| File | Difficulty | Reason |
+|------|------------|--------|
+| `preprocessing.py` | **HEAVY** | 8+ steps: resample, 2 return calcs, outlier filter w/ 2008-09 exception, per-group ffill, verification |
+| `analysis.ipynb` | **HEAVY** | Full EDA + manual research for 5 outliers cross-referenced externally |
+| `backtester.py` | **HEAVY** | Vectorized PnL, benchmark, cumsum, validation (PnL<$75), plotting, file output |
+| `memory_reducer.py` | **MEDIUM** | Column iteration, dtype detection, downcasting logic |
+| `create_signal.py` | **MEDIUM** | Rolling 12M avg + groupby rank within month |
+| `main.py` | **LIGHT** | Pipeline wiring only |
+| `requirements.txt` | **TRIVIAL** | List dependencies |
+| `README.md` | **LIGHT** | Document after results exist |
+| `results/` folder | **TRIVIAL** | mkdir |
+| Data setup | **TRIVIAL** | Download CSVs |
 
 ---
 
-### 🟨 Aaron Ajwoga (#aabrown) - Analysis, Signal & Backtesting
+## Task Assignment (Balanced by Difficulty)
 
-#### 1. **analysis.ipynb** (Part 2 - Exploratory Data Analysis)
-- [ ] Create Jupyter Notebook `notebook/analysis.ipynb` with:
-  - **Missing Values Analysis:**
-    - Count missing values per variable
-    - Count missing values per year
-    - Visualize missingness patterns
-  - **Outliers Analysis:**
-    - Statistical outlier detection (IQR, z-score)
-    - Price distribution analysis
-  - **Visualization:**
-    - Plot: Average price for companies over time **OR** price consistency across companies
-    - Save plot to `results/plots/`
-    - All plots: titles, axis labels, parameter `plot=False` (default) to suppress display
-  - **Outlier Identification (5+ outliers):**
-    - Cross-reference with external source (Yahoo Finance, etc.)
-    - Document: ticker, date, price, explanation
-    - Save to `results/outliers.txt`
-- [ ] Create helper functions in notebook that generate plots and save to `results/plots/`
+### 🟦 **Amon Ochuka (#aochuka) - Data Pipeline Owner**
 
-#### 2. **create_signal.py** (Part 3 - Signal Creation)
-- [ ] Create `create_signal.py` with function `create_signal(prices)` that:
-  - **average_return_1y column:** Average of `monthly_past_return` over previous 12 months (12 consecutive rows), grouped by company
-  - **signal column:** Boolean, `True` if `average_return_1y` is among top 20 highest within same month
-    - Rank 1 = highest metric
-    - Use `groupby('date').rank(ascending=False)` or similar
-    - Signal = True where rank <= 20
+**Core Pipeline (1 HEAVY + 1 MEDIUM + 3 LIGHT)**
 
-#### 3. **backtester.py** (Part 4 - Backtesting)
-- [ ] Create `backtester.py` with function `backtest(prices, sp500)` that:
-  - **Strategy PnL:**
-    - `pnl = signal * monthly_future_return` (vectorized, no for loops)
-    - `strategy_return = pnl / signal.sum()` (per period)
-  - **SP500 Benchmark:**
-    - Signal = `pd.Series([20, 20, ..., 20])` (invest $20/month on SP500)
-    - Compute benchmark PnL and returns
-  - **Cumulative PnL:**
-    - `cumsum()` for both strategies
-  - **Validation:**
-    - Full historical PnL < $75 (if not, outliers not corrected properly)
-  - **Save Results:**
-    - `results/results.txt` with PnL and total returns for both strategies
-  - **Plot:**
-    - Cumulative performance over time for both strategies
-    - Title, legend, x-axis label, y-axis label
-    - Save to `results/plots/`
+#### 1. `memory_reducer.py` (Part 1 - Preliminary) — MEDIUM
+- [ ] Function `memory_reducer(paths)` → optimized (prices, sp500) DataFrames
+- [ ] Float → `np.float32` min; integers → smallest fitting dtype
+- [ ] Targets: prices < 8MB, sp500 < 0.15MB
 
-#### 4. **README.md**
-- [ ] Create comprehensive README.md with:
-  - Project description
-  - Instructions to run from empty environment:
-    ```bash
-    python -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt
-    python main.py
-    ```
-  - Summary of each Python file's purpose
-  - Conclusion: Strategy performance summary (after backtest runs)
+#### 2. `preprocessing.py` (Part 2 - Core Preprocessing) — **HEAVY**
+- [ ] Function `preprocessing(prices, sp500)` → cleaned (prices, sp500)
+- **Prices:**
+  - Monthly resample (last), sort by date
+  - Filter price outliers: $0.1 – $10,000
+  - Compute `monthly_past_return` = (price_t - price_t-1)/price_t-1
+  - Compute `monthly_future_return` = (price_t+1 - price_t)/price_t
+  - Return outliers → NaN if >1 or <-0.5 **except 2008-2009**
+  - Outlier detection **per company** (groupby ticker)
+  - Forward fill missing **per company**
+  - Drop remaining NaN, verify 0 missing
+  - Final columns: `Price`, `monthly_past_return`, `monthly_future_return`
+- **SP500:** Monthly resample + historical monthly returns on adjusted close
+- [ ] Modular helper functions
 
-#### 5. **Results Folder Structure**
-- [ ] Create `results/plots/` directory
-- [ ] Ensure all outputs save correctly:
-  - `results/results.txt`
-  - `results/outliers.txt`
-  - `results/plots/*.png`
+#### 3. `main.py` (Part 5 - Pipeline Orchestration) — LIGHT
+- [ ] Wire full pipeline:
+```python
+prices, sp500 = memory_reducer(paths)
+prices, sp500 = preprocessing(prices, sp500)
+prices = create_signal(prices)
+backtest(prices, sp500)
+```
+- [ ] Define `paths`, imports, run error-free from clean env
+- [ ] Ensure all results save to `results/`
+
+#### 4. `requirements.txt` — TRIVIAL
+- [ ] pandas, numpy, matplotlib, jupyter + versions
+
+#### 5. Data Setup — TRIVIAL
+- [ ] Place `sp500.csv`, `stock_prices.csv` in `data/`
+- [ ] Verify load
+
+---
+
+### 🟨 **Aaron Ajwoga (#aabrown) - Analysis & Strategy Owner**
+
+**Analysis + Signal + Backtest + Docs (2 HEAVY + 1 MEDIUM + 2 LIGHT)**
+
+#### 1. `analysis.ipynb` (Part 2 - EDA) — **HEAVY**
+- [ ] **Missing values:** per variable, per year, visualization
+- [ ] **Outliers:** statistical detection (IQR/z-score), price distributions
+- [ ] **Visualization:** avg price over time OR price consistency across companies → save to `results/plots/`
+- [ ] **5+ outliers:** cross-reference external source (Yahoo Finance), document ticker/date/price/explanation → `results/outliers.txt`
+- [ ] Helper functions with `plot=False` default, titles, axis labels
+
+#### 2. `create_signal.py` (Part 3 - Signal) — MEDIUM
+- [ ] Function `create_signal(prices)` → prices with new columns:
+  - `average_return_1y`: 12-month rolling mean of `monthly_past_return` per company
+  - `signal`: True if `average_return_1y` rank ≤ 20 within month (rank 1 = highest)
+
+#### 3. `backtester.py` (Part 4 - Backtest) — **HEAVY**
+- [ ] Function `backtest(prices, sp500)`:
+  - **Strategy:** `pnl = signal * monthly_future_return` (vectorized, no loops)
+  - `strategy_return = pnl / signal.sum()` per period
+  - **Benchmark:** signal = `pd.Series([20, 20, ...])` ($20/month on SP500)
+  - Compute benchmark PnL & returns
+  - **Cumulative:** `cumsum()` for both
+  - **Validate:** full historical PnL < $75 (else outliers not fixed)
+  - **Save:** `results/results.txt` with PnL & total returns for both
+  - **Plot:** cumulative performance both strategies, title, legend, axis labels → `results/plots/`
+
+#### 4. `README.md` — LIGHT
+- [ ] Project description
+- [ ] Run instructions (venv, pip install, python main.py)
+- [ ] File summaries
+- [ ] Conclusion with strategy performance (after backtest)
+
+#### 5. Results Folder — TRIVIAL
+- [ ] Create `results/plots/`
+- [ ] Verify all outputs save: `results.txt`, `outliers.txt`, plots
 
 ---
 
@@ -186,67 +142,58 @@ backtest(prices, sp500)
 
 | Task | Owner | Notes |
 |------|-------|-------|
-| Code Review | Both | Review each other's PRs |
-| Testing | Both | Run `python main.py` together |
-| Git Commits | Both | Commit own work with clear messages |
-| Final Integration | Amon | Ensure pipeline runs end-to-end |
+| Code Review | Both | PRs within 4 hrs |
+| Integration Testing | Both | Run `python main.py` together |
+| Git Commits | Both | Own work, clear messages |
+| Final Sign-off | Both | Verify acceptance criteria |
 
 ---
 
-## Dependencies Between Tasks
+## Dependency Flow
 
 ```
-memory_reducer.py (Amon)
+memory_reducer.py (Amon, MEDIUM)
        ↓
-preprocessing.py (Amon) ← analysis.ipynb (Aaron) [parallel, but analysis informs preprocessing]
+preprocessing.py (Amon, HEAVY) ←→ analysis.ipynb (Aaron, HEAVY) [parallel after memory_reducer]
        ↓
-create_signal.py (Aaron)
+create_signal.py (Aaron, MEDIUM)
        ↓
-backtester.py (Aaron)
+backtester.py (Aaron, HEAVY)
        ↓
-main.py (Amon) ← integrates all
+main.py (Amon, LIGHT) ← integrates all
        ↓
-README.md (Aaron) ← documents results
+README.md (Aaron, LIGHT) ← documents results
 ```
 
-**Critical Path:** Amon's tasks (1→2→5) must complete before Aaron's tasks (3→4) can be fully tested, but Aaron can work on 1 & 2 in parallel.
+**Critical Path:** Amon's preprocessing must complete before Aaron's create_signal/backtester can be fully tested. Aaron can start analysis.ipynb in parallel after memory_reducer.
 
 ---
 
-## Communication Protocol
+## Acceptance Criteria (Spec-Compliant)
 
-- **Daily Sync:** 15 min standup to discuss progress/blockers
-- **PR Reviews:** Within 4 hours of creation
-- **Blocking Issues:** Slack/Teams immediately
-- **Definition of Done:** Code runs, tests pass, results saved, documented
-
----
-
-## Acceptance Criteria (Per Spec)
-
-- [ ] `memory_reducer.py`: Prices < 8MB, SP500 < 0.15MB, float32 minimum
-- [ ] `preprocessing.py`: Monthly resampled, outliers filtered, returns computed, 0 missing values
-- [ ] `analysis.ipynb`: All 4 EDA components + 5 outliers documented
-- [ ] `create_signal.py`: 12-month avg return, top-20 monthly signal
-- [ ] `backtester.py`: Vectorized PnL, benchmark comparison, cumulative plot, PnL < $75
-- [ ] `main.py`: Runs end-to-end without errors
-- [ ] `README.md`: Complete with run instructions and conclusions
-- [ ] All results saved to `results/` folder structure
+- [ ] `memory_reducer.py`: prices < 8MB, sp500 < 0.15MB, float32 minimum
+- [ ] `preprocessing.py`: monthly resampled, price/return outliers filtered, 2008-09 exception, per-company ops, 0 missing
+- [ ] `analysis.ipynb`: 4 EDA components + 5 documented outliers
+- [ ] `create_signal.py`: 12M rolling avg, top-20 monthly signal
+- [ ] `backtester.py`: vectorized, benchmark, cumsum, PnL < $75, plot saved
+- [ ] `main.py`: runs end-to-end error-free
+- [ ] `README.md`: complete with run instructions & conclusions
+- [ ] All results in `results/`
 
 ---
 
-## Notes
+## Key Spec Reminders
 
-- **Data Quality:** Expect messy data (wrong prices, spikes, splits/dividends). Correct main problems only.
-- **SP500 Constituents Change:** Companies enter/exit over time (e.g., Facebook entered 2013).
-- **Look-ahead Bias:** Historical vs future returns must be separate.
-- **2008-2009 Exception:** Do not filter return outliers during financial crisis.
-- **Per-Company Processing:** All outlier detection and filling done within each ticker independently.
-- **No For Loops:** Backtesting must use vectorized pandas operations.
+- **Data is messy:** wrong prices, spikes, splits/dividends — fix main issues only
+- **SP500 constituents change:** companies enter/exit (e.g., FB 2013)
+- **No look-ahead bias:** historical vs future returns separate
+- **2008-2009 exception:** NO return outlier filtering those years
+- **Per-company processing:** all outlier detection & filling within ticker
+- **No for loops:** backtester must be vectorized
 
 ---
 
-**Sign-off:**
+## Sign-off
 
 - Amon Ochuka: _________________________ Date: ___________
 - Aaron Ajwoga: _________________________ Date: ___________
