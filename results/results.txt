@@ -1,0 +1,29 @@
+=================================================================
+BACKTEST PERFORMANCE SUMMARY: STOCK PICKING 20 vs S&P 500
+=================================================================
+
+Backtest Period:           2001-12-31 to 2014-12-31
+Number of Months:          157
+Monthly Capital Invested:  $20.00
+
+1. Stock Picking 20 Strategy:
+   Total Invested:         $3140.00
+   Total Net PnL:          $66.1439
+   Total Return:           2.11%
+   Average Monthly Return: 2.11%
+   Monthly Return Vol:     7.33%
+   Sharpe Ratio (Rf=0%):   1.00
+
+2. S&P 500 Benchmark Strategy:
+   Total Invested:         $3140.00
+   Total Net PnL:          $15.0001
+   Total Return:           0.48%
+   Average Monthly Return: 0.48%
+   Monthly Return Vol:     4.24%
+   Sharpe Ratio (Rf=0%):   0.39
+
+3. Comparison & Outperformance:
+   Excess Net PnL:         +$51.1438
+   Return Difference:      +1.63%
+   Outperformance Factor:  4.41x
+=================================================================
