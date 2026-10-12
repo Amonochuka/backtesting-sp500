@@ -140,6 +140,10 @@ def backtest(prices: pd.DataFrame, sp500: pd.DataFrame, results_dir: str = 'resu
     }
 
 
+# Backward-compatible alias
+backtester = backtest
+
+
 if __name__ == "__main__":
     from memory_reducer import memory_reducer
     from preprocessing import preprocessing
